@@ -7,7 +7,8 @@ import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTe
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-@SpringBootTest
+// A real server (random port), so servlet filters and connection headers are what a client sees.
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
 public class GreetingControllerTests {
 
@@ -33,6 +34,17 @@ public class GreetingControllerTests {
         .expectStatus().isOk()
         .expectBody()
         .jsonPath("$.content").isEqualTo("Hello, Spring Community!");
+  }
+
+  @Test
+  public void everyResponseSaysWhoServedItAndClosesTheConnection() throws Exception {
+
+    this.restTestClient.get().uri("/greeting")
+        .exchange()
+        .expectStatus().isOk()
+        .expectHeader().exists(ServedByFilter.SERVED_BY)
+        .expectHeader().valueEquals("Connection", "close")
+        .expectHeader().valueEquals("Cache-Control", "no-store");
   }
 
 }
